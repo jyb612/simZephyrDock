@@ -18,7 +18,10 @@ The core functionality and initial setup process is based on ARK Electronics' op
 ARK Electronics Tracktor Beam
 
 ## Manual
-First setup according to guide below, noticing the change in git link (zephyrDock instead of tracktor-beam)
+First setup according to guide below this entire section, following the tracktor-beam guide
+The codes explanation (comments) are available for zephyrDock git but this simZephyrDock git doesn't have
+
+noticing the change in git link (zephyrDock instead of tracktor-beam)
 
 To begin testing, launch the SITL simulation and camera by running following command
 ```
@@ -52,7 +55,7 @@ and
 python flight_pid_review.py 
 ```
 
-File select /logs/pid_log_... the latest csv file
+File select /logs/pid_sim_log_... the latest csv file
 
 
 
@@ -62,9 +65,12 @@ Message Chua Jun Yan on LinkedIn for questions or email me at chua.junyan0612@gm
 
 
 
-![](logo.jpeg)
+
 
 # ROS2 & PX4 Precision Landing with ArUco Markers
+
+![](logo.jpeg)
+
 Master the integration of ROS2, PX4, and OpenCV to achieve precision landing using ArUco marker detection. This tutorial delves into how to leverage ROS2's robust communication framework and PX4's flight control system to implement highly accurate landings for autonomous drones. You'll learn how to configure your environment, process camera feeds, and detect ArUco markers in real-time, enabling your drone to land precisely at designated targets. Whether you're new to drone development or an experienced engineer, this guide provides a step-by-step approach to achieving reliable precision landing with seamless integration into your ROS2 and PX4 projects.
 #### ArUco Markers
 Aruco markers are square fiducial markers used in computer vision for tasks like pose estimation, camera calibration, and augmented reality (AR). Each marker has a unique binary pattern inside a black border, allowing it to be easily detected and identified. They help in determining the position and orientation of cameras or objects in a scene, making them valuable in robotics, navigation, and AR applications.
@@ -93,6 +99,10 @@ https://docs.qgroundcontrol.com/master/en/qgc-user-guide/releases/daily_builds.h
 
 You need the lates PX4-Autopilot, that will contain the required drone with the downward facing camera and the world that has the aruco marker in it
 To get ros_gz bridge
+!!! for zephyrDock, I was using gz harmonic
+!!! for zephyrDock, px4 autopilot version is 15.0.0.8.0 (same apply for pixhawk)
+!!! PX4 git-hash: b955588b26893287c45a59371de7d23d0e778e27
+!!! PX4 version: 1.15.0 80 (17760384)
 ```
 sudo apt install ros-humble-ros-gzgarden
 ```
@@ -118,9 +128,9 @@ Navigate to the directory you would like to place the worskpace and then run the
 ```
 git clone https://github.com/jyb612/simZephyrDock.git
 ```
-Then navigate into the workspace:
+Then navigate into the workspace: (Modified for zephyrDock)
 ```
-cd tracktor-beam
+cd simZephyrDock
 ```
 Install OpenCV from source
 ```
@@ -169,9 +179,9 @@ Launch the ros_gz_bridge for getting the camera info topic (this is how we get c
 ros2 run ros_gz_bridge parameter_bridge /camera_info@sensor_msgs/msg/CameraInfo@gz.msgs.CameraInfo
 ```
 
-Launch the ros2 nodes (aruco_tracker)
+Launch the ros2 nodes (aruco_tracker) (Modified for zephyrDock)
 ```
-cd tracktor-beam/
+cd simZephyrDock/
 source install/setup.bash 
 ros2 run aruco_tracker aruco_tracker 
 ```
@@ -187,9 +197,9 @@ View the video (/image_proc is the annoted image)
 ros2 run rqt_image_view rqt_image_view
 ```
 
-Launch the ros2 nodes (precision_land)
+Launch the ros2 nodes (precision_land) (Modified for zephyrDock)
 ```
-cd tracktor-beam/
+cd simZephyrDock/
 source install/setup.bash 
 ros2 run precision_land precision_land
 ```

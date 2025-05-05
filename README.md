@@ -1,3 +1,67 @@
+# ZephyrDock (Aerial Attach-Detach and Precision Deployment System)
+
+![](zdlogo.jpg)
+
+This project builds upon the excellent work by ARK Electronics' "ROS2 & PX4 Precision Landing with ArUco Markers" implementation. We've extended their foundation with custom modifications including a state manager and specialized versions of the aruco tracker and precision landing packages for our specific use case.
+
+Key Modifications:
+* Added custom state management system (zd_px4_comm)
+* Modified aruco_tracker package for dynamic marker id switching
+* Modified precision_land package for hovering and customize search pattern, pid tuned result, and algorithm change for state switching justification
+* Adapted the system for actual hardware interface (LiDAR TF-Mini, servo SM-80BL ModbusRTU, ultrasonic sensor GYUS42V2, etc.)
+* Added flight review python files 
+  python ./flight_pid_review.py        // for pid logging in /logs,  created automatically for each precision landing mode change
+  python ./history_data_analysis.py    // for zd_logging in /logs,  created manually via running zd_logging node prior to flight (ros2 run zd_px4_comm zd_logging)
+
+## Original Project Credit
+The core functionality and initial setup process is based on ARK Electronics' open-source project:
+ARK Electronics Tracktor Beam
+
+## Manual
+First setup according to guide below, noticing the change in git link (zephyrDock instead of tracktor-beam)
+
+To begin testing, launch the SITL simulation and camera by running following command
+```
+ros2 launch zd_px4_comm MAIN_zd_launch.py 
+```
+
+Then before starting to run program, start logging via running command
+```
+ros2 run zd_px4_comm zd_logging
+```
+
+Then run program (state manager) via
+```
+ros2 run zd_px4_comm zd_px4_command 
+```
+
+Follow the prompt to choose either of the modes (Deploy / Return)
+
+When simulation ended, ctrl + c to stop logging
+
+For flight review, run in terminal
+```
+python historical_data_analysis.py
+```
+
+File select /logs/zd_sim_logging_... the latest csv file
+
+and
+
+```
+python flight_pid_review.py 
+```
+
+File select /logs/pid_log_... the latest csv file
+
+
+
+
+## Questions
+Message Chua Jun Yan on LinkedIn for questions or email me at chua.junyan0612@gmail.com
+
+
+
 ![](logo.jpeg)
 
 # ROS2 & PX4 Precision Landing with ArUco Markers
@@ -52,7 +116,7 @@ nano ~/.bashrc
 
 Navigate to the directory you would like to place the worskpace and then run the following
 ```
-git clone https://github.com/ARK-Electronics/tracktor-beam.git
+git clone https://github.com/jyb612/simZephyrDock.git
 ```
 Then navigate into the workspace:
 ```
@@ -82,6 +146,10 @@ source install/setup.bash
 ### Run the example
 
 #### Run the simulation environment
+!!! YOU CAN NOW REFER TO THE GUIDE FOR ZEPHYRDOCK ABOVE
+!!! BELOW IS FOR VERIFYING BASIC FUNCTION
+!!! TO RUN THE LATEST RESULT SCROLL TO TOP CONTINUE WITH THE MANUAL
+
 Launch PX4 sim
 ```
 make px4_sitl gz_x500_mono_cam_down_aruco

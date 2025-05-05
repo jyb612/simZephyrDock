@@ -1,0 +1,39 @@
+junyan@junyan-nh5xax-ubuntu:~/zephyrDock$ ros2 run zd_px4_comm zd_px4_command 
+[INFO] [1744665163.112403796] [zd_px4_command_node]: 
+theta_rad=1.5658351596805369
+phi_rad=1.5707963267948966
+delta_x=-4.999938467178369
+delta_y=0.02480573381351069
+[INFO] [1744665163.112930923] [zd_px4_command_node]: solar panel=(-5.199938467178369, -0.07519426618648932, -8.6)
+[INFO] [1744665163.113325278] [zd_px4_command_node]: origin=(-0.2, -0.1, -0.6, yaw = 89.71574606288809)
+Input 'd' to deploy, 'r' to return robot: r
+[INFO] [1744665168.501737723] [zd_px4_command_node]: Drone armed.
+[INFO] [1744665168.502127659] [zd_px4_command_node]: Sending arm and takeoff command.
+[INFO] [1744665176.587183651] [zd_px4_command_node]: Current altitude: -0.46714654564857483 Target altitude: -8.6m
+[INFO] [1744665202.578780995] [zd_px4_command_node]: Drone stable, calling next function
+[INFO] [1744665202.678222284] [zd_px4_command_node]: Hovering 2 sec, calling next action
+[INFO] [1744665204.779641138] [zd_px4_command_node]: Published ArUco ID: Robot 3.
+[INFO] [1744665204.881776127] [zd_px4_command_node]: Initiate waypoint to Solar Panel
+[INFO] [1744665204.882177453] [zd_px4_command_node]: Current altitude: -8.460229873657227 Target altitude: -8.6m
+[INFO] [1744665223.978371202] [zd_px4_command_node]: Drone stable, calling next function
+[INFO] [1744665224.078229675] [zd_px4_command_node]: Initiate precision landing (align to aruco marker).
+[INFO] [1744665259.878580552] [zd_px4_command_node]: Grip - servo command published.
+[INFO] [1744665262.978648294] [zd_px4_command_node]: Ascending.
+[INFO] [1744665274.378473448] [zd_px4_command_node]: Drone stable, calling next function
+[INFO] [1744665274.478424826] [zd_px4_command_node]: Waypoint to Home
+[INFO] [1744665274.478968908] [zd_px4_command_node]: Current altitude: -8.581208229064941 Target altitude: -8.6m
+[INFO] [1744665298.979576728] [zd_px4_command_node]: Drone stable, calling next function
+[INFO] [1744665299.078050145] [zd_px4_command_node]: Hovering 2 sec, calling next action
+[INFO] [1744665301.078415479] [zd_px4_command_node]: Published ArUco ID: Robot 3.
+[INFO] [1744665301.078830872] [zd_px4_command_node]: Published ArUco ID: Robot Home 1.
+[INFO] [1744665301.178313486] [zd_px4_command_node]: Initiate Phase 1 Descent.
+[INFO] [1744665301.178817763] [zd_px4_command_node]: Current altitude: -8.260986328125 Target altitude: -3.6m
+[INFO] [1744665309.480096316] [zd_px4_command_node]: Initiate precision landing (align to aruco marker).
+[INFO] [1744665323.877934057] [zd_px4_command_node]: Release - servo command published.
+[INFO] [1744665326.878865990] [zd_px4_command_node]: Ascending.
+[INFO] [1744665338.879617702] [zd_px4_command_node]: Drone stable, calling next function
+[INFO] [1744665338.880072433] [zd_px4_command_node]: Published ArUco ID: Drone Home 0.
+[INFO] [1744665338.979535132] [zd_px4_command_node]: Initiate precision landing (align to aruco marker).
+[INFO] [1744665338.979937510] [zd_px4_command_node]: Precision Landing on Drone Home automatically...
+[WARN] [1744665375.278304633] [zd_px4_command_node]: Exiting Node...
+

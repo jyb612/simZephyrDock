@@ -1,4 +1,17 @@
 #!/usr/bin/env python
+# # DISCLAIMER # #
+
+# LAUNCH FILE, COMMENT UNCOMMENT SELECTIVELY TO START #
+# BASICALLY IT JUST LAUNCH THE CAMERA AND IMAGE PROCESSING NODE #
+# AS WELL AS THE CUSTOM MODE FOR ARUCO-BASED PRECISION DESCENT #
+
+# THERE'S ANOTHER GIT FOR ACTUAL TEST #
+
+
+
+
+
+
 
 __author__ = "Chua Jun Yan"
 __contact__ = "chua.junyan0612@gmail.com"
@@ -29,7 +42,6 @@ def generate_launch_description():
             prefix='gnome-terminal --'
         ),
         
-        # Launch Aruco Tracker node from aruco_tracker package
         Node(
             package='aruco_tracker',
             executable='aruco_tracker',

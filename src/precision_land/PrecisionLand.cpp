@@ -72,9 +72,9 @@
 				rclcpp::QoS(1).best_effort(), std::bind(&PrecisionLand::vehicleLandDetectedCallback, this, std::placeholders::_1));
  
 	 _precision_hovering_done_pub = _node.create_publisher<std_msgs::msg::Bool>("/precision_hovering_done", 10);
+
  
 	 loadParameters();
-
  }
  
  void PrecisionLand::loadParameters()
@@ -161,6 +161,7 @@
 	//  _origin_height = _vehicle_local_position->positionNed().z();
 	//  RCLCPP_INFO(_node.get_logger(), "Origin height: %f", _vehicle_local_position->positionNed().z());
 
+	
  }
  
  void PrecisionLand::inclined_angle_callback(const std_msgs::msg::Float32::SharedPtr msg)
@@ -171,7 +172,7 @@
 
  void PrecisionLand::lidar_range_callback(const std_msgs::msg::Float32::SharedPtr msg)
  {
-	 _above_ground_altitude = -float(msg->data);
+	//  _above_ground_altitude = -float(msg->data);
  }
  
  void PrecisionLand::aruco_id_callback(const std_msgs::msg::Int32::SharedPtr msg)
@@ -283,10 +284,27 @@
  {
 	 generateSearchWaypoints();
 	 switchToState(State::Search);
+	 _start_time = _node.now();
+	 auto t = std::time(nullptr);
+	auto tm = *std::localtime(&t);
+	std::ostringstream oss;
+	oss << "logs/pid_sim_log_" << std::put_time(&tm, "%Y%m%d_%H%M%S") << ".csv";
+	std::string log_filename = oss.str();
+
+	_csv_log_file.open(log_filename, std::ios::out | std::ios::trunc);
+	if (_csv_log_file.is_open()) {
+		_csv_log_file << "timestamp,error_x,error_y,integral_x,integral_y,vx,vy,"
+		              << "drone_x,drone_y,tag_x,tag_y,above_ground_z,target_z\n";
+	} else {
+		RCLCPP_WARN(_node.get_logger(), "Failed to open CSV log file: %s", log_filename.c_str());
+	}
  }
  
  void PrecisionLand::onDeactivate()
  {
+	if (_csv_log_file.is_open()) {
+		_csv_log_file.close();
+	 }
 	 // No-op
  }
  
@@ -309,9 +327,11 @@
 		 break;
 	 }
 	 case State::Search: {
-		 if (_aruco_detected_color || _aruco_detected_bnw) {
+		 if ((_is_active_cam_color && _aruco_detected_color) || (!_is_active_cam_color && _aruco_detected_bnw)){
+		//  if (_aruco_detected_color || _aruco_detected_bnw) {
 			 _approach_altitude = _vehicle_local_position->positionNed().z();
 			 switchToState(State::Approach);
+			 _search_waypoint_index = 0;
 			 break;
 		 }
  
@@ -340,8 +360,37 @@
  
 		 // Approach using position setpoints
 		 auto target_position = Eigen::Vector3f(_tag.position.x(), _tag.position.y(), _approach_altitude);
- 
-		 _trajectory_setpoint->updatePosition(target_position);
+		 Eigen::Vector3f current_position(_vehicle_local_position->positionNed().x(), 
+                                _vehicle_local_position->positionNed().y(), 
+                                _vehicle_local_position->positionNed().z());
+
+		// Check X and Y difference separately
+		float dx = std::abs(target_position.x() - current_position.x());
+		float dy = std::abs(target_position.y() - current_position.y());
+		//  // Compute direction vector
+		//  Eigen::Vector3f direction = target_position - current_position;
+		//  float distance = direction.norm();
+		// _trajectory_setpoint->updatePosition(target_position);
+
+		if (dx > 8.0f || dy > 8.0f) {
+			RCLCPP_WARN(_node.get_logger(), "Target too far (dx=%.2f, dy=%.2f). Not publishing setpoint.", dx, dy);
+			// Optionally switch to Idle or another safety state if needed
+			// switchToState(State::Idle);
+		} else {
+			// Only publish if within limits
+			_trajectory_setpoint->updatePosition(target_position);
+		}
+		 // If close enough, snap to target
+		//  if (distance < 0.1f) {
+		// 	 _trajectory_setpoint->updatePosition(target_position);
+		//  } 
+		//  // Otherwise, move towards target at fixed speed
+		//  else {
+		// 	 float speed = 1.0f; // [m/s]
+		// 	 float step = speed * 0.1f; // For 10Hz control rate
+		// 	 Eigen::Vector3f next_position = current_position + direction.normalized() * std::min(step, distance);
+		// 	 _trajectory_setpoint->updatePosition(next_position);
+		//  }
  
 		 if (positionReached(target_position)) {
 			 switchToState(State::Descend);
@@ -363,15 +412,15 @@
 		 // _above_ground_altitude = _above_ground_altitude + _tag.position.z();			// ACTUAL
 		//  RCLCPP_INFO(_node.get_logger(), "Above Ground Height: %f", _above_ground_altitude);
 		 if (_aruco_id == 3){	// loaded	
-			 float delta_z = _param_bnw_cam_gripper_offset_front/2*sin(2*_param_inclined_angle);
+			 float delta_z = -_param_bnw_cam_gripper_offset_front/2*sin(2*_param_inclined_angle);
 			 _target_z = _param_loaded_robot_z + abs(delta_z);
 		 }
 		 else{
 			 if (_aruco_id == 1){
 				_target_z = _param_loaded_land_z;
 				RCLCPP_INFO(_node.get_logger(), "(%.2f, %.2f, %.2f)", _target_z, _param_loaded_land_z, _above_ground_altitude);
-				if (_is_active_cam_color)
-					_param_inclined_angle = 0.0;
+				// if (_is_active_cam_color)
+				// 	_param_inclined_angle = 0.0;
 			 }
 		 }
 			 
@@ -391,7 +440,7 @@
 			 if(abs(_above_ground_altitude - _target_z) <= 0.05f){
 				 _trajectory_setpoint->update(Eigen::Vector3f(vel.x(), vel.y(), 0), std::nullopt, px4_ros2::quaternionToYaw(_tag.orientation));
 				// RCLCPP_INFO(_node.get_logger(), "Higher much");
-				  RCLCPP_INFO(_node.get_logger(), "Reached target altitude at %.2f meters. Hovering now.", _above_ground_altitude);
+				  RCLCPP_INFO(_node.get_logger(), "Reached target altitude at %.2f meters (z: %.2f). Hovering now.", _above_ground_altitude, _vehicle_attitude->attitude().z());
 		 
 				 // Transition to Hover state after descent
 				 switchToState(State::Hover);
@@ -428,14 +477,14 @@
 		 // _above_ground_altitude = _above_ground_altitude + _tag.position.z();		// ACTUAL
 		//  RCLCPP_INFO(_node.get_logger(), "Above Ground Height: %f", _above_ground_altitude);
 		 if (_aruco_id == 3){	// loaded
-			 float delta_z = _param_bnw_cam_gripper_offset_front/2*sin(2*_param_inclined_angle);
+			 float delta_z = -_param_bnw_cam_gripper_offset_front/2*sin(2*_param_inclined_angle);
 			 _target_z = _param_loaded_robot_z + abs(delta_z);
 		 }
 		 else{
 			 if (_aruco_id == 1){
 				_target_z = _param_loaded_land_z;
-				if (_is_active_cam_color)
-					_param_inclined_angle = 0.0;
+				// if (_is_active_cam_color)
+				// 	_param_inclined_angle = 0.0;
 			 }
 		 }
  
@@ -480,6 +529,9 @@
  
 	 case State::Finished: {
 		 ModeBase::completed(px4_ros2::Result::Success);
+		 if (_csv_log_file.is_open()) {
+			_csv_log_file.close();
+		 }
 		 break;
 	 }
 	 } // end switch/case
@@ -513,7 +565,21 @@
 	 // 0.1m/s min vel and 3m/s max vel
 	 vx = std::clamp(vx, -1.f * _param_max_velocity, _param_max_velocity);
 	 vy = std::clamp(vy, -1.f * _param_max_velocity, _param_max_velocity);
- 
+	
+	 if (_csv_log_file.is_open()) {
+		// In your logging:
+		rclcpp::Duration elapsed = _node.now() - _start_time;
+		_csv_log_file << elapsed.seconds() << ","  // Seconds since start
+					  << delta_pos_x << "," << delta_pos_y << ","
+					  << _vel_x_integral << "," << _vel_y_integral << ","
+					  << vx << "," << vy << ","
+					  << _vehicle_local_position->positionNed().x() << ","
+					  << _vehicle_local_position->positionNed().y() << ","
+					  << _tag.position.x() << "," << _tag.position.y() << ","
+					  << _above_ground_altitude << ","  // Existing parameter
+					  << _target_z << "\n";             // New parameter
+	 }
+	
 	 return Eigen::Vector2f(vx, vy);
  }
  

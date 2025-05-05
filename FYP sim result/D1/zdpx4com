@@ -1,0 +1,40 @@
+junyan@junyan-nh5xax-ubuntu:~/zephyrDock/zephyrDock$ ros2 run zd_px4_comm zd_px4_command 
+[INFO] [1744660596.500834657] [zd_px4_command_node]: 
+theta_rad=1.5481539963935336
+phi_rad=1.5707963267948966
+delta_x=-4.9987183669415085
+delta_y=0.11320197878845349
+[INFO] [1744660596.501451755] [zd_px4_command_node]: solar panel=(-4.898718366941509, 0.21320197878845348, -7.8)
+[INFO] [1744660596.501877001] [zd_px4_command_node]: origin=(0.1, 0.1, 0.2, yaw = 88.70269002966114)
+Input 'd' to deploy, 'r' to return robot: d
+[INFO] [1744660597.509670419] [zd_px4_command_node]: Drone armed.
+[INFO] [1744660597.510166412] [zd_px4_command_node]: Sending arm and takeoff command.
+[INFO] [1744660605.575959268] [zd_px4_command_node]: Current altitude: 0.19008561968803406 Target altitude: -2.8m
+[INFO] [1744660611.667093271] [zd_px4_command_node]: Drone stable, calling next function
+[INFO] [1744660611.767221717] [zd_px4_command_node]: Hovering 2 sec, calling next action
+[INFO] [1744660613.767260069] [zd_px4_command_node]: Published ArUco ID: Robot Home 1.
+[INFO] [1744660613.867170713] [zd_px4_command_node]: Initiate precision landing (align to aruco marker).
+[INFO] [1744660630.167068483] [zd_px4_command_node]: Grip - servo command published.
+[INFO] [1744660633.267150324] [zd_px4_command_node]: Ascending.
+[INFO] [1744660661.167110338] [zd_px4_command_node]: Drone stable, calling next function
+[INFO] [1744660661.267064251] [zd_px4_command_node]: Initiate waypoint to Solar Panel
+[INFO] [1744660661.267476961] [zd_px4_command_node]: Current altitude: -7.753920555114746 Target altitude: -7.8m
+[INFO] [1744660684.867363871] [zd_px4_command_node]: Drone stable, calling next function
+[INFO] [1744660684.868118053] [zd_px4_command_node]: Start to deploy (blinded descend)
+[INFO] [1744660684.868771860] [zd_px4_command_node]: Target altitude: -5.156501907110214
+[INFO] [1744660697.167068298] [zd_px4_command_node]: Drone stable, calling next function
+[INFO] [1744660697.267226391] [zd_px4_command_node]: Current altitude: -5.063458442687988 Target altitude: -5.063458442687988m
+[INFO] [1744660697.267663789] [zd_px4_command_node]: Release - servo command published.
+[INFO] [1744660700.367237565] [zd_px4_command_node]: Ascending.
+[INFO] [1744660713.067931192] [zd_px4_command_node]: Drone stable, calling next function
+[INFO] [1744660713.166829879] [zd_px4_command_node]: Waypoint to Home
+[INFO] [1744660713.167204063] [zd_px4_command_node]: Current altitude: -7.731523036956787 Target altitude: -7.8m
+[INFO] [1744660733.367801555] [zd_px4_command_node]: Drone stable, calling next function
+[INFO] [1744660733.467193599] [zd_px4_command_node]: Hovering 2 sec, calling next action
+[INFO] [1744660735.467525226] [zd_px4_command_node]: Published ArUco ID: Drone Home 0.
+[INFO] [1744660735.567156837] [zd_px4_command_node]: Initiate Phase 1 Descent.
+[INFO] [1744660735.567592952] [zd_px4_command_node]: Current altitude: -7.666027545928955 Target altitude: -2.8m
+[INFO] [1744660745.267279764] [zd_px4_command_node]: Initiate precision landing (align to aruco marker).
+[INFO] [1744660745.267633519] [zd_px4_command_node]: Precision Landing on Drone Home automatically...
+^C[INFO] [1744660807.668113100] [zd_px4_command_node]: Keyboard Interrupt detected. Shutting down...
+Failed to publish log message to rosout: publisher's context is invalid, at ./src/rcl/publisher.c:389

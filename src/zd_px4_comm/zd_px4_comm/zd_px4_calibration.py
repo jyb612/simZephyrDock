@@ -2,7 +2,7 @@
 
 import rclpy
 from rclpy.node import Node
-from px4_msgs.msg import VehicleCommand, OffboardControlMode, TrajectorySetpoint, VehicleOdometry, VehicleStatus, VehicleGlobalPosition, VehicleLocalPosition
+from px4_msgs.msg import VehicleCommand, OffboardControlMode, TrajectorySetpoint, VehicleLocalPosition, VehicleStatus, VehicleGlobalPosition, VehicleLocalPosition
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
 import time
 from std_msgs.msg import Int32, Bool, Float64  # For servo command
@@ -33,9 +33,9 @@ class ZDCalNode(Node):
         
         # Subscribe to current position
         self.create_subscription(
-            VehicleOdometry,
-            '/fmu/out/vehicle_odometry',
-            self.odometry_callback,
+            VehicleLocalPosition,
+            '/fmu/out/vehicle_local_position',
+            self.local_position_callback,
             qos_profile
         )
 
@@ -55,8 +55,8 @@ class ZDCalNode(Node):
         self.current_mode = None  # Current flight mode
         self.armed = False  # Armed state
         self.state = "PREFLIGHT"  # State machine state
-        self.takeoff_altitude = -8.0  # Takeoff altitude in NED (5 meters up)
-        self.mode_callback_time = None
+        self.takeoff_altitude = -5.0  # Takeoff altitude in NED (5 meters up)
+        self.mode_callback_time = None  
         self.hover_start_time = None  # Time when hovering starts
         self.motion_callback_time = None
         self.hover = False
@@ -72,49 +72,49 @@ class ZDCalNode(Node):
         self.linear_z = 2.0
 
         # Timer to control the state machine
-        self.timer = self.create_timer(0.5, self.timer_callback)  # 2Hz
+        self.timer = self.create_timer(0.05, self.timer_callback)  # 2Hz
         
-    def odometry_callback(self, msg):
+    def local_position_callback(self, msg):
         """Callback to update the current position."""
         self.current_position = [
-            float(msg.position[0]),  # X in NED
-            float(msg.position[1]),  # Y in NED
-            float(msg.position[2]),  # Z in NED
+            float(msg.x),  # X in NED
+            float(msg.y),  # Y in NED
+            float(msg.z),  # Z in NED
         ]
-        self.angular_velocity = [
-            float(msg.angular_velocity[0]),  # Roll angular velocity
-            float(msg.angular_velocity[1]),  # Pitch angular velocity
-            float(msg.angular_velocity[2]),  # Yaw angular velocity
-        ]
+        # self.angular_velocity = [
+        #     float(msg.angular_velocity[0]),  # Roll angular velocity
+        #     float(msg.angular_velocity[1]),  # Pitch angular velocity
+        #     float(msg.angular_velocity[2]),  # Yaw angular velocity
+        # ]
         # self.get_logger().info(f"(X={msg.position[0]}, Y={msg.position[1]}, Z={msg.position[2]})")
 
         # Extract quaternion
-        q = [msg.q[0], msg.q[1], msg.q[2], msg.q[3]]
+        # q = [msg.q[0], msg.q[1], msg.q[2], msg.q[3]]
         
         # Convert quaternion to Euler angles (roll, pitch, yaw)
-        self.current_euler = self.quaternion_to_euler(q)
+        self.yaw = float(msg.heading)
         # self.get_logger().info(f"\nmsg.position: ({self.current_position[0]}, {self.current_position[1]}, {self.current_position[2]})\nmsg.angular_velocity: ({self.angular_velocity[0]}, {self.angular_velocity[1]}, {self.angular_velocity[2]})")
 
-    def quaternion_to_euler(self, q):
-        """Convert quaternion to Euler angles (roll, pitch, yaw)"""
-        # Roll (x-axis rotation)
-        sinr_cosp = 2 * (q[0] * q[1] + q[2] * q[3])
-        cosr_cosp = 1 - 2 * (q[1] * q[1] + q[2] * q[2])
-        roll = np.arctan2(sinr_cosp, cosr_cosp)
+    # def quaternion_to_euler(self, q):
+    #     """Convert quaternion to Euler angles (roll, pitch, yaw)"""
+    #     # Roll (x-axis rotation)
+    #     sinr_cosp = 2 * (q[0] * q[1] + q[2] * q[3])
+    #     cosr_cosp = 1 - 2 * (q[1] * q[1] + q[2] * q[2])
+    #     roll = np.arctan2(sinr_cosp, cosr_cosp)
 
-        # Pitch (y-axis rotation)
-        sinp = 2 * (q[0] * q[2] - q[3] * q[1])
-        if abs(sinp) >= 1:
-            pitch = np.copysign(np.pi / 2, sinp)  # Use 90 degrees if out of range
-        else:
-            pitch = np.arcsin(sinp)
+    #     # Pitch (y-axis rotation)
+    #     sinp = 2 * (q[0] * q[2] - q[3] * q[1])
+    #     if abs(sinp) >= 1:
+    #         pitch = np.copysign(np.pi / 2, sinp)  # Use 90 degrees if out of range
+    #     else:
+    #         pitch = np.arcsin(sinp)
 
-        # Yaw (z-axis rotation)
-        siny_cosp = 2 * (q[0] * q[3] + q[1] * q[2])
-        cosy_cosp = 1 - 2 * (q[2] * q[2] + q[3] * q[3])
-        yaw = np.arctan2(siny_cosp, cosy_cosp)
+    #     # Yaw (z-axis rotation)
+    #     siny_cosp = 2 * (q[0] * q[3] + q[1] * q[2])
+    #     cosy_cosp = 1 - 2 * (q[2] * q[2] + q[3] * q[3])
+    #     yaw = np.arctan2(siny_cosp, cosy_cosp)
 
-        return roll, pitch, yaw        
+    #     return roll, pitch, yaw        
 
     def vehicle_status_callback(self, msg):
         """Callback to update the current mode."""
@@ -130,38 +130,49 @@ class ZDCalNode(Node):
         offboard_msg = OffboardControlMode()
         offboard_msg.timestamp = int(self.get_clock().now().nanoseconds / 1000)
         offboard_msg.position = True
-        offboard_msg.velocity = False
+        offboard_msg.velocity = True
         offboard_msg.acceleration = False
         offboard_msg.attitude = False
         offboard_msg.body_rate = False
         self.offboard_control_mode_publisher.publish(offboard_msg)
 
-    def publish_trajectory_setpoint(self, x=0.0, y=0.0, z=-6.0, yaw=0.0, velocity_limit=1.0):
-        """Publish a trajectory setpoint with velocity control."""
-        trajectory_msg = TrajectorySetpoint()
-        trajectory_msg.timestamp = int(self.get_clock().now().nanoseconds / 1000)
-        
-        # Set position target (x, y, z) - optional
-        trajectory_msg.position = [x, y, z]
-        trajectory_msg.yaw = yaw  # Set desired yaw
-
-        # Calculate velocity towards the target
+    def publish_trajectory_setpoint(self, x=0.0, y=0.0, z=-6.0, yaw=0.0, velocity_limit=0.5):
+        # Position error
         dx = x - self.current_position[0]
         dy = y - self.current_position[1]
         dz = z - self.current_position[2]
-        distance = math.sqrt(dx**2 + dy**2 + dz**2)
 
-        # Velocity calculation to target with a defined limit
-        if distance > 0:
-            velocity_x = (dx / distance) * velocity_limit
-            velocity_y = (dy / distance) * velocity_limit
-            velocity_z = (dz / distance) * velocity_limit
-        else:
-            velocity_x, velocity_y, velocity_z = 0.0, 0.0, 0.0
+        # Proportional gain
+        p_gain = 1.2
+        yaw_p_gain = 1.5
 
-        # Set the velocity in the trajectory message
-        # trajectory_msg.velocity = [velocity_x, velocity_y, velocity_z]
+        # Velocity calculation (P control)
+        velocity_x = dx * p_gain
+        velocity_y = dy * p_gain
+        velocity_z = dz * p_gain
 
+        # Clamp velocities
+        velocity_x = max(min(velocity_x, velocity_limit), -velocity_limit)
+        velocity_y = max(min(velocity_y, velocity_limit), -velocity_limit)
+        velocity_z = max(min(velocity_z, velocity_limit), -velocity_limit)
+
+        # Yaw control
+        current_yaw = self.yaw  # You must track this from odometry or estimator
+        yaw_error = math.atan2(math.sin(yaw - current_yaw), math.cos(yaw - current_yaw))  # shortest angle
+        yaw_speed = yaw_error * yaw_p_gain
+        yaw_speed = max(min(yaw_speed, velocity_limit), -velocity_limit)
+
+        # Prepare trajectory setpoint message
+        trajectory_msg = TrajectorySetpoint()
+        trajectory_msg.timestamp = int(self.get_clock().now().nanoseconds / 1000)
+
+        # Use pure velocity control (position = NaN)
+        trajectory_msg.position = [math.nan, math.nan, math.nan]
+        trajectory_msg.velocity = [velocity_x, velocity_y, velocity_z]
+        trajectory_msg.yaw = float('nan')  # PX4 ignores this if NaN
+        trajectory_msg.yawspeed = yaw_speed
+
+        # Publish the message
         self.trajectory_setpoint_publisher.publish(trajectory_msg)
 
 
@@ -205,9 +216,9 @@ class ZDCalNode(Node):
                 self.hover_start_time = time.time()
                 self.loop_once = True
             if time.time() - self.hover_start_time >= 1:
-                self.origin_position[0] = round(self.current_position[0], 1)
-                self.origin_position[1] = round(self.current_position[1], 1)
-                self.origin_position[2] = round(self.current_position[2], 1)
+                self.origin_position[0] = round(self.current_position[0], 2)
+                self.origin_position[1] = round(self.current_position[1], 2)
+                self.origin_position[2] = round(self.current_position[2], 2)
                 self.anchor_position[0] = self.origin_position[0]
                 self.anchor_position[1] = self.origin_position[1]
                 self.anchor_position[2] = self.origin_position[2]
@@ -236,21 +247,35 @@ class ZDCalNode(Node):
                 # if (self.current_mode != 4):
                 #     self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1.0, 4.0, 3.0)
                 self.get_logger().info("Drone armed and takeoff")
-                # time.sleep(8)
+                time.sleep(8)
                 self.anchor_position[2] = self.current_position[2]
-                self.anchor_position[3] = self.current_euler[2]
-                # self.state = "TAKEOFF"
+                self.anchor_position[3] = self.yaw
+                self.state = "TAKEOFF"
                 # self.get_logger().info("Switched to Offboard mode")
-                # self.get_logger().info(f"Toward altitude: {self.anchor_position[2] + self.takeoff_altitude}")
+                self.get_logger().info(f"Toward altitude: {self.anchor_position[2] + self.takeoff_altitude}")
+                self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1.0, 6.0)
+                self.publish_offboard_control_mode()
+                self.publish_trajectory_setpoint(x=self.anchor_position[0], y=self.anchor_position[1], z=self.anchor_position[2] + self.takeoff_altitude, yaw=self.anchor_position[3])  # Start with yaw 0
+
                 # pass
 
-        # elif self.state == "TAKEOFF":
-        #     self.publish_offboard_control_mode()
-        #     self.publish_trajectory_setpoint(x=self.anchor_position[0], y=self.anchor_position[1], z=self.anchor_position[2] + self.takeoff_altitude, yaw=self.anchor_position[3])  # Start with yaw 0
-        #     self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1.0, 6.0)
-        #     if abs(self.current_position[2] - (self.anchor_position[2] + self.takeoff_altitude)) <= 0.1:  # Allow small tolerance
-        #         self.state = "HOVER"
-        #         self.hover_start_time = time.time()
+        elif self.state == "TAKEOFF":
+            self.publish_offboard_control_mode()
+            self.publish_trajectory_setpoint(x=self.anchor_position[0], y=self.anchor_position[1], z=self.anchor_position[2] + self.takeoff_altitude, yaw=self.anchor_position[3] + math.radians(90))  # Start with yaw 0
+            if abs(self.current_position[2] - (self.anchor_position[2] + self.takeoff_altitude)) <= 0.1:  # Allow small tolerance
+                # self.state = "HOVER"
+                self.state = "TRAVEL"
+                # self.get_logger().info("Switched to Offboard mode")
+                self.get_logger().info(f"Toward altitude: {self.anchor_position[2] - 0.5}")
+                # self.hover_start_time = time.time()
+        
+        elif self.state == "TRAVEL":
+            self.publish_offboard_control_mode()
+            self.publish_trajectory_setpoint(x=self.anchor_position[0], y=self.anchor_position[1], z=self.anchor_position[2] - 0.5, yaw=self.anchor_position[3])  # Start with yaw 0
+            # if (abs(self.current_position[1]-(self.anchor_position[1]+10.0))) < 0.1:
+                # self.publish_vehicle_command(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, 1.0, 4.0, 5.0)
+                # self.state = "RETURN"
+
 
         # elif self.state == "HOVER":
         #     self.publish_offboard_control_mode()
@@ -268,11 +293,11 @@ class ZDCalNode(Node):
         #         self.get_logger().info("Waiting for Yaw.")
         #         self.hover = False
         #     else:
-        #         self.anchor_position[3] = self.current_euler[2]
+        #         self.anchor_position[3] = self.yaw
         #         # self.state = "LINEAR_CALIBRATION_X"
         #         self.state = "LINEAR"
         #         self.hover = False
-        #         self.get_logger().info(f"Current Position {self.current_position[0]}, {self.current_position[1]}, {self.current_position[2]}, yaw = {self.current_euler[2]}")
+        #         self.get_logger().info(f"Current Position {self.current_position[0]}, {self.current_position[1]}, {self.current_position[2]}, yaw = {self.yaw}")
 
         # elif self.state == "WAIT_FOR_YAW":
         #     # Check if the angular velocity is near zero (yaw is done)
@@ -282,7 +307,7 @@ class ZDCalNode(Node):
         #         if all(abs(v) < self.angular_velocity_threshold for v in self.angular_velocity):
         #             self.hover_start_time = time.time()
         #             self.hover = True
-        #             self.get_logger().info(f"Yaw completed at {self.yaw_angles[self.current_yaw_index]} degrees.\nself.current_euler[2] = {math.degrees(self.current_euler[2])}")
+        #             self.get_logger().info(f"Yaw completed at {self.yaw_angles[self.current_yaw_index]} degrees.\nself.yaw = {math.degrees(self.yaw)}")
         #     else:
         #         if (time.time() - self.hover_start_time > 0.5):
         #             self.state = "YAW_CALIBRATION"
@@ -381,7 +406,7 @@ def main(args=None):
 
     try:
         while node.running:
-            rclpy.spin_once(node, timeout_sec=0.1)
+            rclpy.spin_once(node, timeout_sec=0.05)
             # rclpy.spin(node)
     except KeyboardInterrupt:
         node.get_logger().info("Keyboard Interrupt detected. Shutting down...")

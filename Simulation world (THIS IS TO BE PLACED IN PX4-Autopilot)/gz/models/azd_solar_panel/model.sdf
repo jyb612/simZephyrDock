@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sdf version="1.9">
+  <model name="solar_panel">
+    <static>false</static>
+    <link name="solar_panel_link">
+      <collision name="collision">
+        <geometry>
+          <box>
+            <size>5 3 0.1</size>  <!-- Adjust size of the panel -->
+          </box>
+        </geometry>
+      </collision>
+      <visual name="visual">
+        <geometry>
+          <box>
+            <size>7 5 0.1</size>  <!-- Adjust size of the panel -->
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.3 0.5 0.7 1</ambient>  <!-- More blue shade -->
+          <diffuse>0.3 0.5 0.7 1</diffuse>  <!-- More blue shade -->
+          <specular>0.1 0.1 0.1 1</specular>  <!-- Matte finish -->
+        </material>
+      </visual>
+    </link>
+    <pose>0 0 1 0 0 0</pose>  <!-- Position of the solar panel -->
+  </model>
+</sdf>
+
+
+
+
